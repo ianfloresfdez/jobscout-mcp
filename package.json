@@ -1,0 +1,47 @@
+{
+  "name": "jobscout-mcp",
+  "version": "0.1.0",
+  "description": "MCP server for tech job hunting: search remote and Spain-based tech jobs across several boards, see what the market asks for, and rank offers against your skills.",
+  "type": "module",
+  "bin": {
+    "jobscout-mcp": "dist/index.js"
+  },
+  "main": "dist/index.js",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/index.js",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "inspect": "npx @modelcontextprotocol/inspector node dist/index.js",
+    "prepublishOnly": "npm run build && npm test"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "jobs",
+    "job-search",
+    "remote-jobs",
+    "claude",
+    "ai-agents"
+  ],
+  "author": "Ian Flores",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.17"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.17.4",
+    "zod": "3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "22.10.2",
+    "typescript": "5.6.3",
+    "vitest": "2.1.8"
+  }
+}
