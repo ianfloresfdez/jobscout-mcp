@@ -1,4 +1,4 @@
-export type SourceId = "remotive" | "arbeitnow" | "hn" | "adzuna";
+export type SourceId = "remotive" | "arbeitnow" | "hn" | "adzuna" | "himalayas" | "jobicy" | "remoteok";
 
 export interface Salary {
   min: number | null;

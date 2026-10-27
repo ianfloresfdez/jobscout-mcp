@@ -37,9 +37,12 @@ There is also a `job_hunt` prompt that chains them: market overview, best five f
 | [Remotive](https://remotive.com) | Remote jobs worldwide | None |
 | [Arbeitnow](https://www.arbeitnow.com) | Europe, many remote roles | None |
 | [Hacker News "Who is hiring?"](https://news.ycombinator.com/submitted?id=whoishiring) | This month's thread, startups worldwide | None |
+| [Himalayas](https://himalayas.app) | Remote jobs worldwide, with country restrictions | None |
+| [Jobicy](https://jobicy.com) | Remote jobs open to Spain, Europe and EMEA | None |
+| [Remote OK](https://remoteok.com) | Latest remote postings worldwide | None |
 | [Adzuna](https://developer.adzuna.com) | Spain (or 15+ other countries) with salaries | Free `ADZUNA_APP_ID` + `ADZUNA_APP_KEY` |
 
-Three sources work with no setup. Add the free Adzuna key for on-site and hybrid roles in Spain.
+Six sources work with no setup. Add the free Adzuna key for on-site and hybrid roles in Spain.
 
 ## Install
 

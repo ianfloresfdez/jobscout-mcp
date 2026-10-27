@@ -6,6 +6,18 @@ const CURRENCY: Array<[RegExp, string]> = [
   [/\$|\busd\b/i, "USD"],
 ];
 
+/** Builds a Salary from boards that already give numbers (Himalayas, Jobicy); null when there is no amount. */
+export function structuredSalary(min: unknown, max: unknown, currency: unknown, period: unknown): Salary | null {
+  const lo = Number(min) || null, hi = Number(max) || null;
+  if (!lo && !hi) return null;
+  const p = String(period ?? "").toLowerCase();
+  return {
+    min: lo ?? hi, max: hi ?? lo,
+    currency: typeof currency === "string" && currency ? currency.toUpperCase() : null,
+    period: /year|annual/.test(p) ? "year" : /month/.test(p) ? "month" : /hour/.test(p) ? "hour" : null,
+  };
+}
+
 function toNumber(raw: string, kSuffix: boolean): number {
   // "70.000" (es) and "70,000" (en) are both thousands separators here; we never see cents in salaries.
   const n = parseFloat(raw.replace(/[.,](?=\d{3}\b)/g, "").replace(",", "."));

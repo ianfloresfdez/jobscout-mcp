@@ -4,6 +4,9 @@ import { extractSkills, canonicalizeSkills } from "../src/skills.js";
 import { matchesLocation, matchesQuery, searchJobs, seen } from "../src/search.js";
 import { mapHnComment } from "../src/sources/hn.js";
 import { mapRemotive } from "../src/sources/remotive.js";
+import { mapHimalayas } from "../src/sources/himalayas.js";
+import { mapJobicy } from "../src/sources/jobicy.js";
+import { mapRemoteOk } from "../src/sources/remoteok.js";
 import { marketSnapshot, rankForProfile } from "../src/analysis.js";
 import { htmlToText } from "../src/util.js";
 import type { Job } from "../src/types.js";
@@ -66,6 +69,18 @@ describe("filters", () => {
     expect(matchesLocation(job({ location: "Berlin", remote: false }), "Spain")).toBe(false);
     expect(matchesLocation(job({ location: "Madrid, España", remote: false }), "spain")).toBe(true);
   });
+
+  it("treats Arbeitnow remote roles as European", () => {
+    expect(matchesLocation(job({ source: "arbeitnow", location: "Remote job", remote: true }), "Europe")).toBe(true);
+    expect(matchesLocation(job({ source: "arbeitnow", location: "Paris", remote: false }), "Europe")).toBe(false);
+    expect(matchesLocation(job({ source: "remoteok", location: "Remote", remote: true }), "Europe")).toBe(false);
+  });
+
+  it("matches multi-country restrictions that include Spain", () => {
+    expect(matchesLocation(job({ location: "Belgium, Italy, Spain, UK", remote: true }), "Barcelona")).toBe(true);
+    expect(matchesLocation(job({ location: "Worldwide", remote: true }), "Barcelona")).toBe(true);
+    expect(matchesLocation(job({ location: "Austria, Germany, Italy", remote: true }), "Barcelona")).toBe(false);
+  });
 });
 
 describe("source mapping", () => {
@@ -116,6 +131,27 @@ describe("source mapping", () => {
     expect(j.description).toBe("Ship RAG features\n\n- Python");
     expect(j.salary).toMatchObject({ min: 100000, max: 130000, currency: "USD" });
     expect(j.postedAt).toBe("2026-10-15T08:00:00.000Z");
+  });
+
+  it("maps Himalayas: no restrictions means worldwide, structured salary", () => {
+    const j = mapHimalayas({
+      guid: "https://himalayas.app/companies/acme/jobs/ai-engineer", title: "AI Engineer ", companyName: "Acme",
+      minSalary: 70000, maxSalary: 90000, currency: "eur", salaryPeriod: "annual", locationRestrictions: [],
+      pubDate: 1793116700, description: "<p>LLM agents</p>", applicationLink: "https://acme.ai/apply",
+    });
+    expect(j).toMatchObject({ id: "himalayas:companies/acme/jobs/ai-engineer", title: "AI Engineer", location: "Worldwide",
+      remote: true, url: "https://acme.ai/apply", salary: { min: 70000, max: 90000, currency: "EUR", period: "year" } });
+    expect(mapHimalayas({ guid: "g", title: "T", locationRestrictions: ["Spain", "Portugal"] }).location).toBe("Spain, Portugal");
+  });
+
+  it("maps Jobicy and Remote OK", () => {
+    const a = mapJobicy({ id: 5, url: "https://jobicy.com/jobs/5", jobTitle: "Backend &amp; AI Engineer", companyName: "Beta",
+      jobGeo: "EMEA,  LATAM", pubDate: "2026-10-27T11:13:56+00:00", jobDescription: "<p>Python</p>" });
+    expect(a).toMatchObject({ id: "jobicy:5", title: "Backend & AI Engineer", location: "EMEA, LATAM", salary: null });
+    const b = mapRemoteOk({ id: "9", position: "LLM Engineer", company: "Gamma", location: "", date: "2026-10-26T08:00:12+00:00",
+      salary_min: 100000, salary_max: 140000, description: "<b>RAG</b>" });
+    expect(b).toMatchObject({ id: "remoteok:9", location: "Remote", url: "https://remoteok.com/remote-jobs/9",
+      salary: { min: 100000, max: 140000, currency: "USD", period: "year" }, description: "RAG" });
   });
 
   it("decodes entities", () => {

@@ -3,10 +3,13 @@ import { remotive } from "./sources/remotive.js";
 import { arbeitnow } from "./sources/arbeitnow.js";
 import { hn } from "./sources/hn.js";
 import { adzuna } from "./sources/adzuna.js";
+import { himalayas } from "./sources/himalayas.js";
+import { jobicy } from "./sources/jobicy.js";
+import { remoteok } from "./sources/remoteok.js";
 import { daysAgo, norm, TtlCache } from "./util.js";
 import { queryTokens, tokenHits } from "./query.js";
 
-export const SOURCES: Record<SourceId, Source> = { remotive, arbeitnow, hn, adzuna };
+export const SOURCES: Record<SourceId, Source> = { remotive, arbeitnow, hn, adzuna, himalayas, jobicy, remoteok };
 
 /** Every job any search has returned in this session, so get_job can answer without refetching. */
 export const seen = new Map<string, Job>();
@@ -14,7 +17,7 @@ export const seen = new Map<string, Job>();
 const cache = new TtlCache<Job[]>(10 * 60 * 1000);
 
 /** Sources that search server-side return loose matches; boards without search return everything. */
-const CLIENT_FILTERED: SourceId[] = ["arbeitnow", "remotive"];
+const CLIENT_FILTERED: SourceId[] = ["arbeitnow", "remotive", "himalayas", "jobicy", "remoteok"];
 
 export { queryTokens } from "./query.js";
 
@@ -38,7 +41,11 @@ export function matchesLocation(job: Job, location: string): boolean {
   const where = norm(job.location);
   if (where.includes(want)) return true;
   if (/^(remote|remoto|teletrabajo)$/.test(want)) return job.remote === true;
-  if (/^(europe|eu|europa)$/.test(want)) return /\b(europe|eu|emea|worldwide|anywhere|global)\b/.test(where) || (job.remote === true && /\b(germany|deutschland|berlin|netherlands|france|spain|portugal|poland|ireland)\b/.test(where));
+  if (/^(europe|eu|europa)$/.test(want)) {
+    if (/\b(europe|eu|emea|worldwide|anywhere|global)\b/.test(where)) return true;
+    // Arbeitnow only lists European employers, so its remote roles are European even when the location says "Remote"
+    return job.remote === true && (job.source === "arbeitnow" || /\b(germany|deutschland|berlin|netherlands|france|spain|portugal|poland|ireland)\b/.test(where));
+  }
   const wantsSpain = SPAIN.some((s) => want === s || want.includes(s));
   if (wantsSpain && job.remote === true && OPEN_TO_SPAIN.test(where)) return true;
   if (wantsSpain && /\b(spain|espana)\b/.test(where) && want !== "madrid" && want !== "barcelona") return true;
