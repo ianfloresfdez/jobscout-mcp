@@ -1,6 +1,6 @@
 import type { Job, Source } from "../types.js";
 import { fetchJson, htmlToText } from "../util.js";
-import { structuredSalary } from "../salary.js";
+import { parseSalary, structuredSalary } from "../salary.js";
 
 interface JobicyJob {
   id: number;
@@ -21,6 +21,7 @@ interface JobicyJob {
 }
 
 export function mapJobicy(j: JobicyJob): Job {
+  const description = htmlToText(j.jobDescription || j.jobExcerpt);
   return {
     id: `jobicy:${j.id}`,
     source: "jobicy",
@@ -30,9 +31,9 @@ export function mapJobicy(j: JobicyJob): Job {
     remote: true,
     url: j.url,
     postedAt: j.pubDate ? new Date(j.pubDate).toISOString() : null,
-    salary: structuredSalary(j.salaryMin, j.salaryMax, j.salaryCurrency, j.salaryPeriod),
+    salary: structuredSalary(j.salaryMin, j.salaryMax, j.salaryCurrency, j.salaryPeriod) ?? parseSalary(description),
     tags: [...(j.jobIndustry ?? []), ...(j.jobType ?? []), ...(j.jobLevel ? [j.jobLevel] : [])].map(htmlToText),
-    description: htmlToText(j.jobDescription || j.jobExcerpt),
+    description,
   };
 }
 

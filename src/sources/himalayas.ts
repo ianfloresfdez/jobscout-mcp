@@ -1,6 +1,6 @@
 import type { Job, Source } from "../types.js";
 import { fetchJson, htmlToText } from "../util.js";
-import { structuredSalary } from "../salary.js";
+import { parseSalary, structuredSalary } from "../salary.js";
 
 interface HimalayasJob {
   guid: string;
@@ -23,6 +23,7 @@ interface HimalayasJob {
 
 export function mapHimalayas(j: HimalayasJob): Job {
   const where = j.locationRestrictions ?? [];
+  const description = htmlToText(j.description || j.excerpt);
   return {
     id: `himalayas:${j.guid.replace(/^https?:\/\/himalayas\.app\//, "")}`,
     source: "himalayas",
@@ -33,9 +34,9 @@ export function mapHimalayas(j: HimalayasJob): Job {
     remote: true,
     url: j.applicationLink || j.guid,
     postedAt: j.pubDate ? new Date(j.pubDate * 1000).toISOString() : null,
-    salary: structuredSalary(j.minSalary, j.maxSalary, j.currency, j.salaryPeriod),
+    salary: structuredSalary(j.minSalary, j.maxSalary, j.currency, j.salaryPeriod) ?? parseSalary(description),
     tags: [...(j.categories ?? []), ...(j.seniority ?? []), ...(j.employmentType ? [j.employmentType] : [])],
-    description: htmlToText(j.description || j.excerpt),
+    description,
   };
 }
 
