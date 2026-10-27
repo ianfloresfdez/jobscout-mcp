@@ -1,4 +1,12 @@
-export type SourceId = "remotive" | "arbeitnow" | "hn" | "adzuna" | "himalayas" | "jobicy" | "remoteok";
+export type SourceId =
+  | "remotive" | "arbeitnow" | "hn" | "adzuna" | "himalayas" | "jobicy" | "remoteok"
+  | "companies" | "weworkremotely" | "workingnomads";
+
+/** A company's public job board on an applicant tracking system, e.g. { ats: "greenhouse", slug: "typeform" }. */
+export interface CompanyBoard {
+  ats: "greenhouse" | "lever" | "ashby";
+  slug: string;
+}
 
 export interface Salary {
   min: number | null;
@@ -33,6 +41,8 @@ export interface SearchParams {
   location?: string;
   remoteOnly?: boolean;
   maxAgeDays?: number;
+  /** Company boards to read; defaults to the JOBSCOUT_COMPANIES env var ("greenhouse:typeform,ashby:preply"). */
+  companies?: CompanyBoard[];
 }
 
 export interface SourceResult {

@@ -40,9 +40,14 @@ There is also a `job_hunt` prompt that chains them: market overview, best five f
 | [Himalayas](https://himalayas.app) | Remote jobs worldwide, with country restrictions | None |
 | [Jobicy](https://jobicy.com) | Remote jobs open to Spain, Europe and EMEA | None |
 | [Remote OK](https://remoteok.com) | Latest remote postings worldwide | None |
+| [We Work Remotely](https://weworkremotely.com) | Latest remote postings worldwide | None |
+| [Working Nomads](https://www.workingnomads.com) | Latest remote postings worldwide | None |
+| Company career pages ([Greenhouse](https://developers.greenhouse.io/job-board.html), [Lever](https://github.com/lever/postings-api), [Ashby](https://developers.ashbyhq.com/docs/public-job-posting-api)) | Every open role of the companies you pick, on-site and hybrid included | None; list them in `JOBSCOUT_COMPANIES` |
 | [Adzuna](https://developer.adzuna.com) | Spain (or 15+ other countries) with salaries | Free `ADZUNA_APP_ID` + `ADZUNA_APP_KEY` |
 
-Six sources work with no setup. Add the free Adzuna key for on-site and hybrid roles in Spain.
+Eight sources work with no setup. Add the free Adzuna key for on-site and hybrid roles in Spain, and the
+companies you care about as `JOBSCOUT_COMPANIES="greenhouse:typeform,lever:lodgify,ashby:preply"` (the slug is the
+last part of the company's board URL, e.g. `job-boards.greenhouse.io/typeform`).
 
 ## Install
 

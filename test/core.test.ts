@@ -7,6 +7,9 @@ import { mapRemotive } from "../src/sources/remotive.js";
 import { mapHimalayas } from "../src/sources/himalayas.js";
 import { mapJobicy } from "../src/sources/jobicy.js";
 import { mapRemoteOk } from "../src/sources/remoteok.js";
+import { mapAshby, mapGreenhouse, mapLever, parseCompanies } from "../src/sources/companies.js";
+import { mapWwrItem } from "../src/sources/weworkremotely.js";
+import { mapWorkingNomads } from "../src/sources/workingnomads.js";
 import { marketSnapshot, rankForProfile } from "../src/analysis.js";
 import { htmlToText } from "../src/util.js";
 import type { Job } from "../src/types.js";
@@ -154,6 +157,42 @@ describe("source mapping", () => {
       salary: { min: 100000, max: 140000, currency: "USD", period: "year" }, description: "RAG" });
   });
 
+  it("maps company boards: Greenhouse, Lever and Ashby", () => {
+    const g = mapGreenhouse({ id: 81, title: "AI Engineer", absolute_url: "https://job-boards.greenhouse.io/typeform/jobs/81",
+      company_name: "Typeform", location: { name: "Spain (Remote) ;Germany (Remote)" }, first_published: "2026-09-07T10:14:35-04:00",
+      content: "&lt;p&gt;Build &lt;b&gt;LLM&lt;/b&gt; agents&lt;/p&gt;", departments: [{ name: "Engineering" }] }, "typeform");
+    expect(g).toMatchObject({ id: "companies:greenhouse:typeform:81", company: "Typeform", location: "Spain (Remote); Germany (Remote)",
+      remote: true, description: "Build LLM agents", tags: ["Engineering"] });
+    const l = mapLever({ id: "u1", text: "Backend Engineer", hostedUrl: "https://jobs.lever.co/lodgify/u1", createdAt: 1759237893950,
+      categories: { location: "Barcelona", team: "Engineering" }, workplaceType: "hybrid", descriptionPlain: "Python",
+      lists: [{ text: "Requirements", content: "<li>Django</li>" }], salaryRange: { min: 50000, max: 65000, currency: "EUR", interval: "per-year-salary" } }, "lodgify");
+    expect(l).toMatchObject({ company: "Lodgify", location: "Barcelona", remote: false, salary: { min: 50000, max: 65000, currency: "EUR", period: "year" } });
+    expect(l.description).toContain("Requirements\n- Django");
+    const a = mapAshby({ id: "x", title: " Senior Back-End Engineer", location: "Barcelona", secondaryLocations: [{ location: "Remote - Spain" }],
+      isRemote: true, workplaceType: "Hybrid", jobUrl: "https://jobs.ashbyhq.com/preply/x", publishedAt: "2026-04-28T16:24:00.618+00:00",
+      descriptionPlain: "Node.js", compensation: { scrapeableCompensationSalarySummary: "€60K – €80K" } }, "preply");
+    expect(a).toMatchObject({ title: "Senior Back-End Engineer", company: "Preply", location: "Barcelona; Remote - Spain", remote: false,
+      salary: { min: 60000, max: 80000, currency: "EUR" } });
+  });
+
+  it("parses the company list", () => {
+    expect(parseCompanies("greenhouse:typeform, lever:lodgify ashby:preply,workday:nope,greenhouse:")).toEqual([
+      { ats: "greenhouse", slug: "typeform" }, { ats: "lever", slug: "lodgify" }, { ats: "ashby", slug: "preply" }]);
+  });
+
+  it("maps We Work Remotely RSS items and Working Nomads", () => {
+    const item = `<title>Acme AI: Senior LLM Engineer</title><region>Anywhere in the World</region>
+      <country>🇪🇸 Spain and 🇵🇹 Portugal</country><category>Programming</category><type>Full-Time</type>
+      <description>&lt;p&gt;RAG &amp;amp; agents&lt;/p&gt;</description><pubDate>Mon, 26 Oct 2026 10:00:00 +0000</pubDate>
+      <link>https://weworkremotely.com/remote-jobs/acme-ai-senior-llm-engineer</link>`;
+    expect(mapWwrItem(item)).toMatchObject({ id: "weworkremotely:acme-ai-senior-llm-engineer", company: "Acme AI",
+      title: "Senior LLM Engineer", location: "Spain and Portugal", description: "RAG & agents", postedAt: "2026-10-26T10:00:00.000Z" });
+    expect(mapWwrItem("<title>No link</title>")).toBeNull();
+    expect(mapWorkingNomads({ url: "https://www.workingnomads.com/job/go/1976189/", title: "Python Dev", company_name: "Lemon.io",
+      tags: "python, ai", location: "Europe", pub_date: "2026-10-27T12:07:11-04:00" }))
+      .toMatchObject({ id: "workingnomads:1976189", location: "Europe", tags: ["python", "ai"] });
+  });
+
   it("decodes entities", () => {
     expect(htmlToText("R&amp;D &#x2F; 5&euro;")).toBe("R&D / 5€");
   });
@@ -210,5 +249,19 @@ describe("searchJobs", () => {
     expect(perSource.find((p) => p.source === "arbeitnow")?.error).toMatch(/500/);
     expect(perSource.find((p) => p.source === "adzuna")?.skipped).toMatch(/ADZUNA_APP_ID/);
     expect(seen.has("hn:901")).toBe(true);
+  });
+
+  it("reads the chosen company boards and keeps their old-but-open roles", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+      if (url.includes("boards-api.greenhouse.io/v1/boards/acme/")) {
+        return new Response(JSON.stringify({ jobs: [
+          { id: 1, title: "AI Engineer", absolute_url: "https://g/1", location: { name: "Barcelona" }, first_published: "2025-01-01T00:00:00Z", content: "LLM" },
+        ] }));
+      }
+      throw new Error("unexpected " + url);
+    }));
+    const { jobs } = await searchJobs({ query: "ai engineer", location: "Barcelona", maxAgeDays: 30, sources: ["companies"],
+      companies: [{ ats: "greenhouse", slug: "acme" }] });
+    expect(jobs.map((j) => j.id)).toEqual(["companies:greenhouse:acme:1"]);
   });
 });

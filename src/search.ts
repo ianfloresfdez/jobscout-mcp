@@ -6,10 +6,15 @@ import { adzuna } from "./sources/adzuna.js";
 import { himalayas } from "./sources/himalayas.js";
 import { jobicy } from "./sources/jobicy.js";
 import { remoteok } from "./sources/remoteok.js";
+import { companies } from "./sources/companies.js";
+import { weworkremotely } from "./sources/weworkremotely.js";
+import { workingnomads } from "./sources/workingnomads.js";
 import { daysAgo, norm, TtlCache } from "./util.js";
 import { queryTokens, tokenHits } from "./query.js";
 
-export const SOURCES: Record<SourceId, Source> = { remotive, arbeitnow, hn, adzuna, himalayas, jobicy, remoteok };
+export const SOURCES: Record<SourceId, Source> = {
+  remotive, arbeitnow, hn, adzuna, himalayas, jobicy, remoteok, companies, weworkremotely, workingnomads,
+};
 
 /** Every job any search has returned in this session, so get_job can answer without refetching. */
 export const seen = new Map<string, Job>();
@@ -17,7 +22,12 @@ export const seen = new Map<string, Job>();
 const cache = new TtlCache<Job[]>(10 * 60 * 1000);
 
 /** Sources that search server-side return loose matches; boards without search return everything. */
-const CLIENT_FILTERED: SourceId[] = ["arbeitnow", "remotive", "himalayas", "jobicy", "remoteok"];
+const CLIENT_FILTERED: SourceId[] = [
+  "arbeitnow", "remotive", "himalayas", "jobicy", "remoteok", "companies", "weworkremotely", "workingnomads",
+];
+
+/** Career pages only list open roles, so an old publish date does not mean the posting is stale. */
+const NO_AGE_LIMIT: SourceId[] = ["companies"];
 
 export { queryTokens } from "./query.js";
 
@@ -66,7 +76,8 @@ export async function searchJobs(
       const src = SOURCES[id];
       const why = src.unavailable();
       if (why) return { source: id, jobs: [], skipped: why };
-      const key = `${id}|${norm(params.query)}|${norm(params.location ?? "")}|${params.maxAgeDays ?? ""}`;
+      const boards = id === "companies" ? (params.companies ?? []).map((b) => `${b.ats}:${b.slug}`).join(",") : "";
+      const key = `${id}|${norm(params.query)}|${norm(params.location ?? "")}|${params.maxAgeDays ?? ""}|${boards}`;
       const hit = cache.get(key);
       if (hit) return { source: id, jobs: hit };
       try {
@@ -88,7 +99,7 @@ export async function searchJobs(
       if (CLIENT_FILTERED.includes(job.source) && !matchesQuery(job, params.query)) continue;
       if (params.remoteOnly && job.remote !== true) continue;
       if (params.location && !matchesLocation(job, params.location)) continue;
-      if (params.maxAgeDays) {
+      if (params.maxAgeDays && !NO_AGE_LIMIT.includes(job.source)) {
         const age = daysAgo(job.postedAt, now);
         if (age !== null && age > params.maxAgeDays) continue;
       }

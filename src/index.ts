@@ -28,7 +28,8 @@ server.registerTool(
   {
     title: "Search tech jobs",
     description:
-      "Search tech job postings across Remotive, Arbeitnow, Hacker News 'Who is hiring?', Himalayas, Jobicy, Remote OK and Adzuna (Spain) at once. " +
+      "Search tech job postings across Remotive, Arbeitnow, Hacker News 'Who is hiring?', Himalayas, Jobicy, Remote OK, We Work Remotely, Working Nomads, " +
+      "Adzuna (Spain) and the company career pages listed in JOBSCOUT_COMPANIES at once. " +
       "Returns the newest matches with company, location, remote status, salary when published, the skills each posting asks for, and an id for get_job.",
     inputSchema: { ...common, limit: z.number().int().min(1).max(50).optional().describe("How many postings to return. Defaults to 15.") },
     annotations: readOnly,
