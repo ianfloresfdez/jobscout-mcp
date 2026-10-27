@@ -58,13 +58,14 @@ export function mapLever(j: LeverJob, slug: string): Job {
     j.additionalPlain ?? "",
   ].join("\n\n").trim();
   const wt = (j.workplaceType ?? "").toLowerCase();
+  const location = (c.allLocations?.length ? c.allLocations.join("; ") : c.location)?.trim() || j.country || "Unknown";
   return {
     id: `companies:lever:${slug}:${j.id}`,
     source: "companies",
     title: j.text.trim(),
     company: pretty(slug),
-    location: (c.allLocations?.length ? c.allLocations.join("; ") : c.location)?.trim() || j.country || "Unknown",
-    remote: wt === "remote" ? true : wt === "onsite" || wt === "hybrid" ? false : null,
+    location,
+    remote: wt === "remote" ? true : wt === "onsite" || wt === "hybrid" ? false : /\bremote\b/i.test(location) || null,
     url: j.hostedUrl,
     postedAt: j.createdAt ? new Date(j.createdAt).toISOString() : null,
     salary: j.salaryRange ? structuredSalary(j.salaryRange.min, j.salaryRange.max, j.salaryRange.currency, j.salaryRange.interval) : parseSalary(description),
@@ -100,8 +101,9 @@ export function mapAshby(j: AshbyJob, slug: string): Job {
     title: j.title.trim(),
     company: pretty(slug),
     location: places.join("; ") || "Unknown",
-    // Hybrid roles need the office, so only fully remote ones count as remote
-    remote: wt === "remote" ? true : wt === "hybrid" || wt === "onsite" ? false : j.isRemote ?? null,
+    // Hybrid roles need the office, so only fully remote ones count as remote; some boards leave the type empty
+    // and only say "Remote" in the location
+    remote: wt === "remote" ? true : wt === "hybrid" || wt === "onsite" ? false : j.isRemote ?? (/\bremote\b/i.test(places.join(" ")) || null),
     url: j.jobUrl,
     postedAt: j.publishedAt ? new Date(j.publishedAt).toISOString() : null,
     salary: parseSalary(comp) ?? parseSalary(description),

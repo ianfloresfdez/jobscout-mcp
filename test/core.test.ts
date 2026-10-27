@@ -173,6 +173,7 @@ describe("source mapping", () => {
       descriptionPlain: "Node.js", compensation: { scrapeableCompensationSalarySummary: "€60K – €80K" } }, "preply");
     expect(a).toMatchObject({ title: "Senior Back-End Engineer", company: "Preply", location: "Barcelona; Remote - Spain", remote: false,
       salary: { min: 60000, max: 80000, currency: "EUR" } });
+    expect(mapAshby({ id: "y", title: "AI Platform Engineer", location: "Remote, Global", jobUrl: "https://j/y" }, "supabase").remote).toBe(true);
   });
 
   it("parses the company list", () => {
